@@ -16,6 +16,7 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
+const fs = require('fs');
 
 const router = [
     {name: 'my-tweets', fn: get_tweets},
@@ -30,7 +31,6 @@ function list_routes(){
   });
 };
 
-//SOURCE: https://jttan.com/2016/06/node-js-basic-command-line-interactive-loop/
 function startReadline(){
   list_routes();
   rl.question("Input one of the numbers above... ", function (answer) {
@@ -38,7 +38,6 @@ function startReadline(){
     input_handler(route);
   });
 };
-
 
 function input_handler(route){
   let response;
@@ -66,6 +65,7 @@ function input_handler(route){
 //show tweets - 'my-tweets'
 function get_tweets(count, screen_name){
   twitter.get('statuses/user_timeline', screen_name, function(error, tweets, response){
+    var done = false;
     if(!error){
       console.log("**** Here are the Tweets you requested ****");
       console.log("** Screen name: "+screen_name);
@@ -73,8 +73,14 @@ function get_tweets(count, screen_name){
       console.log("///////////////////////////////////////////");
       tweets.forEach((tweet, i) => console.log(i+1+". "+tweet.text+"\n"));
       console.log("///////////////////////////////////////////");
+      done = true;
     }else{
       console.log("Here is the error: ", error);
+      done = true;
+    }
+    if(done){
+      console.log("**** Try another... ****");
+      startReadline();
     }
   });
 };
@@ -95,6 +101,7 @@ function get_spotify_song(song_name){
     if(err) throw err;
     let item_count = data.tracks.items.length;
     console.log("///////////////////* Search results for: '"+song_name+"' ("+item_count+") *//////////////////////// \n");
+    var done = false;
     if(item_count > 0){
       
       data.tracks.items.forEach(function(item, i){
@@ -104,12 +111,17 @@ function get_spotify_song(song_name){
         console.log(" \t Spotify Link: ", item.external_urls.spotify, "\n");
       })
       console.log("///////////////////////////////////////////");
+      done = true;
     }else{
       //do something else...
       console.log("No Songs found. Please try again.")
       console.log("///////////////////////////////////////////");
       spotify_song_prompt();
     }
+    if(done){
+      console.log("**** Try another... ****");
+      startReadline();
+    }    
     
   });
 };
@@ -129,10 +141,11 @@ function get_movie(movie_name){
   movie_name = movie_name || "Mr. Nobody";
   let url = "http://www.omdbapi.com/?apikey="+omdb_key+"&t="+movie_name;
   request(url, function (error, response, body) {
+    var done = false;
     if(error) throw error;
     if(response && response.statusCode===200){
-      console.log("Here is the body: ", body);
       var data = JSON.parse(body);
+      console.log("///////////////////////////////////////////");
       console.log("Title:\t\t", data.Title); 
       console.log("Year:\t\t", data.Year); 
       console.log("IMDB Rating:\t", data.imdbRating);
@@ -142,11 +155,16 @@ function get_movie(movie_name){
       console.log("Language: \t", data.Language);
       console.log("Plot: \t\t", data.Plot);
       console.log("Actors: \t", data.Actors);
-
+      console.log("///////////////////////////////////////////");
+      done = true;
     }else{
       console.log("We could not find anything. Please try again.");
       imdb_prompt();
-    } 
+    }
+    if(done){
+      console.log("**** Try another... ****");
+      startReadline();
+    }
   });
 };
 
@@ -157,7 +175,23 @@ function get_text_from_file(file){
   // * Using the `fs` Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
   // * It should run `spotify-this-song` for "I Want it That Way," as follows the text in `random.txt`.
   // * Feel free to change the text in that document to test out the feature for other commands.
-
+  fs.readFile("random.txt", "utf8", (err, data) =>{
+    if(err) throw err;
+    const file_array = data.split(",");
+    const route_name = file_array[0].trim();
+    const value = file_array[1].trim();
+    switch(route_name){
+      case "my-tweets":
+        response = get_tweets(25, "whatsupguy1");
+        break;
+      case "spotify-this-song":
+        response = get_spotify_song(value);
+        break;
+      case "movie-this":
+        response = get_movie(value);
+        break;
+    }    
+  });
 };
 
 
