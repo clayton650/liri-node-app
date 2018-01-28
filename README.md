@@ -4,4 +4,4 @@ Install
 2. `npm install`
 
 Play
-`npm run play` or `node liri`
+`npm run liri` or `node liri`
