@@ -79,8 +79,11 @@ function get_tweets(count, screen_name){
       done = true;
     }
     if(done){
-      console.log("**** Try another... ****");
-      startReadline();
+      log("my-tweets", screen_name, tweets, function(){
+        console.log("**** Try another... ****");
+        startReadline();
+      });
+      
     }
   });
 };
@@ -119,13 +122,14 @@ function get_spotify_song(song_name){
       spotify_song_prompt();
     }
     if(done){
-      console.log("**** Try another... ****");
-      startReadline();
+      log("spotify-this-song", song_name, data.tracks.items, function(){
+        console.log("**** Try another... ****");
+        startReadline();
+      });
     }    
     
   });
 };
-
 
 function movie_prompt(){
   rl.question("Enter a move name or leave blank for default (Mr. Nobody): ", function (movie_name) {
@@ -133,7 +137,6 @@ function movie_prompt(){
     get_movie(movie_name);
   });
 };
-
 
 //'movie-this'
 function get_movie(movie_name){
@@ -162,12 +165,13 @@ function get_movie(movie_name){
       imdb_prompt();
     }
     if(done){
-      console.log("**** Try another... ****");
-      startReadline();
+      log("movie-this", movie_name, data, function(){
+        console.log("**** Try another... ****");
+        startReadline();
+      });
     }
   });
 };
-
 
 //'do-what-it-says'
 function get_text_from_file(file){
@@ -194,8 +198,35 @@ function get_text_from_file(file){
   });
 };
 
+function log(search, value, data, callback_fn, file="log.txt"){
 
-function log(file="log.txt"){
+  var data_to_log = {
+    search,
+    value,
+    data
+  }
+
+  fs.readFile(file, "utf8", function(err, res){
+    if(err) throw err;
+
+    let json_data;
+    //for new/empty log files the res will be undefined
+    if(!res){
+      json_data = [];
+    }else{
+      json_data = JSON.parse(res);
+    }
+    
+    json_data.push(data_to_log);
+    let string_data = JSON.stringify(json_data);
+    fs.writeFile(file, string_data, "utf8", function(err){
+      if(err) throw err;
+      console.log("\n[ --> Your search was logged to "+file+" <-- ]\n");
+      if(callback_fn && typeof callback_fn === "function"){
+        callback_fn();
+      }
+    });
+  });
 
 };
 
